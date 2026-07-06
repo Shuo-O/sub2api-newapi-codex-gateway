@@ -100,6 +100,30 @@ ssh -N -L 3000:127.0.0.1:3000 -L 8080:127.0.0.1:8080 user@your-server
 
 ### 后台配置步骤
 
+### New API 页面警告说明
+
+New API 后台可能显示两个提示：
+
+```text
+您正在使用 SQLite 数据库。如果您在容器环境中运行，请确保已正确设置数据库文件的持久化映射，否则容器重启后所有数据将丢失！
+```
+
+这是正常提示。当前部署已经把 New API 容器内的 `/data` 映射到宿主机：
+
+```text
+$HOME/ai-gateway/new-api-data:/data
+```
+
+所以容器重启不会丢失 New API 数据。不要删除 `$HOME/ai-gateway/new-api-data`，否则 New API 的用户、渠道、Token 等数据会丢失。个人自用可以继续使用 SQLite；如果要长期多人使用或生产化运行，再考虑把 New API 改成 MySQL / PostgreSQL。
+
+还可能看到：
+
+```text
+旧版前端即将停止维护
+```
+
+这也是 New API 自身的前端提示，通常不影响本项目需要的 API 转发、渠道配置和 `/v1/responses` 验证。可以先继续完成渠道和 Token 配置；如果当前 UI 的某些功能不可用，再按 New API 后台提示切换新版前端或升级 New API 镜像。
+
 #### 1. 配置 Sub2API
 
 打开：
@@ -369,6 +393,24 @@ ssh -N -L 3000:127.0.0.1:3000 -L 8080:127.0.0.1:8080 user@your-server
 ```
 
 ### Backend Setup
+
+### New API UI Warnings
+
+New API may show this warning:
+
+```text
+You are using SQLite. If you are running in a container environment, make sure the database file is persisted, otherwise all data will be lost after the container restarts.
+```
+
+This is expected. This deployment maps the container `/data` directory to the host:
+
+```text
+$HOME/ai-gateway/new-api-data:/data
+```
+
+Container restarts will not erase New API data as long as `$HOME/ai-gateway/new-api-data` is kept. SQLite is acceptable for personal local use. For multi-user or production-style deployments, consider switching New API to MySQL or PostgreSQL.
+
+New API may also warn that the legacy frontend will stop being maintained. That is a New API UI notice and normally does not affect channel setup, API forwarding, or `/v1/responses` validation. Continue with channel and token setup first; if a UI feature is unavailable, switch to the newer frontend or upgrade the New API image according to the New API project guidance.
 
 #### 1. Configure Sub2API
 
