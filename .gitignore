@@ -1,0 +1,25 @@
+# Secrets and local runtime data
+LOCAL_CREDENTIALS.md
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.token
+*token*
+*cookie*
+*session*
+
+# Generated gateway runtime directories
+ai-gateway/
+new-api-data/
+sub2api-deploy/data/
+sub2api-deploy/postgres_data/
+sub2api-deploy/redis_data/
+
+# Logs and local noise
+logs/
+*.log
+*.tmp
+.DS_Store
