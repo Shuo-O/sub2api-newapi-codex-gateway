@@ -1,53 +1,53 @@
 # Sub2API + New API + Codex Local Gateway
 
-This repository packages a one-command deployment kit for a personal AI gateway:
+[中文](#中文说明) | [English](#english)
+
+## 中文说明
+
+这是一个可复用的一键部署项目，用于部署个人自用的本地/服务器 AI 网关：
 
 ```text
-ChatGPT / Claude subscription accounts -> Sub2API -> New API -> Codex App / Codex CLI
-DeepSeek official API key              -> New API -> Codex App / Codex CLI
+ChatGPT / Claude 订阅账号 -> Sub2API -> New API -> Codex App / Codex CLI
+DeepSeek 官方 API Key     -> New API -> Codex App / Codex CLI
 ```
 
-The deployed Codex provider uses the OpenAI Responses API:
+Codex 通过 New API 调用，并使用 OpenAI Responses API：
 
 ```text
 POST http://127.0.0.1:3000/v1/responses
 ```
 
-The default deployment is localhost-only. Keep it private unless you deliberately add your own firewall, TLS, authentication, and access controls.
+> 说明：仓库目录是部署模板；真正运行的服务默认部署在 `$HOME/ai-gateway`，不在本仓库目录里。
 
-## What This Installs
+### 默认部署内容
 
-The installer creates a gateway directory, downloads the upstream Sub2API Docker Compose files, writes a New API Compose file, starts both services, installs a Codex skill, and can update the local Codex config.
-
-Default paths:
-
-| Item | Default |
+| 项目 | 默认值 |
 |---|---|
-| Gateway home | `$HOME/ai-gateway` |
-| Sub2API | `127.0.0.1:8080` |
-| New API | `127.0.0.1:3000` |
-| Codex config | `$HOME/.codex/config.toml` |
-| Codex skill | `$HOME/.codex/skills/sub2api-newapi-codex/SKILL.md` |
-| Local credentials | `$HOME/ai-gateway/LOCAL_CREDENTIALS.md` |
+| 网关运行目录 | `$HOME/ai-gateway` |
+| Sub2API | `http://127.0.0.1:8080` |
+| New API | `http://127.0.0.1:3000` |
+| Codex 配置 | `$HOME/.codex/config.toml` |
+| Codex Skill | `$HOME/.codex/skills/sub2api-newapi-codex/SKILL.md` |
+| 本机私有凭据 | `$HOME/ai-gateway/LOCAL_CREDENTIALS.md` |
 
-You can override paths and ports with environment variables before running the installer.
+`LOCAL_CREDENTIALS.md` 只在部署机器上生成，权限为 `600`，会被 `.gitignore` 排除。它用于保存 Sub2API 初始管理员账号和密码。不要上传或分享这个文件。
 
-## Requirements
+### 环境要求
 
-- Docker Engine or Docker Desktop
+- Docker Engine 或 Docker Desktop
 - Docker Compose plugin
+- `bash`
 - `curl`
 - `openssl`
-- `bash`
-- Optional: `python3`, used for safer Codex config updates
+- 可选：`python3`，用于更稳妥地更新 Codex 配置
 
-On macOS with Colima:
+如果使用 Colima：
 
 ```bash
 colima start
 ```
 
-## Quick Start
+### 一键部署
 
 ```bash
 git clone https://github.com/Shuo-O/sub2api-newapi-codex-gateway.git
@@ -55,24 +55,20 @@ cd sub2api-newapi-codex-gateway
 ./scripts/install.sh
 ```
 
-After installation, open:
+部署完成后打开：
 
 ```text
 Sub2API: http://127.0.0.1:8080
 New API: http://127.0.0.1:3000
 ```
 
-Run validation:
+查看 Sub2API 管理员账号和密码：
 
 ```bash
-$HOME/ai-gateway/validate.sh
+cat "$HOME/ai-gateway/LOCAL_CREDENTIALS.md"
 ```
 
-Without a New API token, the validator should still prove that `/v1/responses` exists by returning `401`.
-
-## Custom Deployment
-
-Set variables before running `install.sh`:
+### 自定义部署
 
 ```bash
 AI_GATEWAY_HOME="$HOME/ai-gateway" \
@@ -80,156 +76,135 @@ AI_GATEWAY_BIND_HOST="127.0.0.1" \
 SUB2API_PORT="8080" \
 NEW_API_PORT="3000" \
 CODEX_HOME="$HOME/.codex" \
+CODEX_MODEL="gpt-5-codex" \
 ./scripts/install.sh
 ```
 
-Useful variables:
-
-| Variable | Default | Meaning |
+| 变量 | 默认值 | 说明 |
 |---|---|---|
-| `AI_GATEWAY_HOME` | `$HOME/ai-gateway` | Deployment directory |
-| `AI_GATEWAY_BIND_HOST` | `127.0.0.1` | Host interface for Docker-published ports |
-| `SUB2API_PORT` | `8080` | Host port for Sub2API |
-| `NEW_API_PORT` | `3000` | Host port for New API |
-| `CODEX_HOME` | `$HOME/.codex` | Codex config directory |
-| `CODEX_MODEL` | `gpt-5-codex` | Model name Codex will request |
-| `INSTALL_CODEX_CONFIG` | `1` | Set to `0` to skip Codex config updates |
-| `SUB2API_ADMIN_EMAIL` | `admin@sub2api.local` | Initial Sub2API admin account for new installs |
-| `SUB2API_ADMIN_PASSWORD` | generated | Initial Sub2API admin password for new installs |
+| `AI_GATEWAY_HOME` | `$HOME/ai-gateway` | 运行目录 |
+| `AI_GATEWAY_BIND_HOST` | `127.0.0.1` | Docker 端口绑定地址 |
+| `SUB2API_PORT` | `8080` | Sub2API 宿主机端口 |
+| `NEW_API_PORT` | `3000` | New API 宿主机端口 |
+| `CODEX_HOME` | `$HOME/.codex` | Codex 配置目录 |
+| `CODEX_MODEL` | `gpt-5-codex` | Codex 请求的模型名 |
+| `INSTALL_CODEX_CONFIG` | `1` | 设为 `0` 可跳过 Codex 配置更新 |
+| `SUB2API_ADMIN_EMAIL` | `admin@sub2api.local` | 新部署的 Sub2API 初始管理员账号 |
+| `SUB2API_ADMIN_PASSWORD` | 自动生成 | 新部署的 Sub2API 初始管理员密码 |
 
-For a server deployment, keep `AI_GATEWAY_BIND_HOST=127.0.0.1` and access it through SSH tunnels:
+服务器部署时建议仍绑定 `127.0.0.1`，通过 SSH 隧道访问：
 
 ```bash
 ssh -N -L 3000:127.0.0.1:3000 -L 8080:127.0.0.1:8080 user@your-server
 ```
 
-Then open local browser URLs:
+### 后台配置步骤
 
-```text
-http://127.0.0.1:8080
-http://127.0.0.1:3000
-```
+#### 1. 配置 Sub2API
 
-## Manual Backend Configuration
-
-The installer starts the services. You still need to configure accounts and API keys in the web UIs.
-
-### 1. Configure Sub2API
-
-Open:
+打开：
 
 ```text
 http://127.0.0.1:8080
 ```
 
-In Sub2API:
-
-1. Complete admin initialization or login.
-2. Add ChatGPT / OpenAI subscription accounts.
-3. Add Claude subscription accounts.
-4. Confirm the actual models exposed by Sub2API.
-5. Generate an API key for New API.
-
-Do not save real account credentials, cookies, OAuth tokens, or API keys in this repository.
-
-For a fresh install, the installer writes the local-only admin credential file:
+使用以下文件中的管理员账号密码登录：
 
 ```bash
 cat "$HOME/ai-gateway/LOCAL_CREDENTIALS.md"
 ```
 
-This file is generated on the deployed machine, has `600` permissions, and is ignored by Git. It is intentionally not included in this repository or uploaded to GitHub.
+然后在 Sub2API 后台完成：
 
-If you installed before this credentials file existed, retrieve the one-time Sub2API password from local Docker logs:
+1. 添加 ChatGPT / OpenAI 订阅账号。
+2. 添加 Claude 订阅账号。
+3. 确认 Sub2API 实际暴露的模型名。
+4. 生成给 New API 调用的 API Key。
 
-```bash
-docker logs sub2api 2>&1 | grep -A1 'Generated admin password'
-```
+#### 2. 配置 New API
 
-### 2. Configure New API
-
-Open:
+打开：
 
 ```text
 http://127.0.0.1:3000
 ```
 
-Complete admin initialization or login.
+首次打开时按页面提示创建 New API 管理员账号。
 
-Add a Sub2API channel:
+添加 Sub2API 渠道：
 
-| Field | Value |
+| 字段 | 填写 |
 |---|---|
-| Type | OpenAI / OpenAI Compatible / Responses-compatible, depending on the current New API UI |
-| Name | `sub2api-local` |
+| 类型 | OpenAI / OpenAI Compatible / Responses-compatible，按 New API 当前 UI 为准 |
+| 名称 | `sub2api-local` |
 | Base URL | `http://host.docker.internal:8080/v1` |
-| API Key | The key generated in Sub2API |
-| Models | The actual model names exposed by Sub2API |
+| API Key | Sub2API 后台生成的 Key |
+| 模型 | Sub2API 实际暴露的模型名 |
 
-Important: New API runs in Docker. Inside the New API container, `127.0.0.1:8080` means the New API container itself, not the host. Use:
+New API 运行在 Docker 容器里，访问宿主机 Sub2API 时不要填 `127.0.0.1:8080`，必须使用：
 
 ```text
 http://host.docker.internal:8080/v1
 ```
 
-Add a DeepSeek channel:
+添加 DeepSeek 渠道：
 
-| Field | Value |
+| 字段 | 填写 |
 |---|---|
-| Type | DeepSeek / OpenAI Compatible |
+| 类型 | DeepSeek / OpenAI Compatible |
 | Base URL | `https://api.deepseek.com/v1` |
-| API Key | Your official DeepSeek key |
-| Models | `deepseek-chat`, `deepseek-reasoner` |
+| API Key | 你的 DeepSeek 官方 API Key |
+| 模型 | `deepseek-chat`、`deepseek-reasoner` |
 
-### 3. Configure Model Mapping
+#### 3. 模型映射
 
-Codex requests this model by default:
+默认 Codex 请求：
 
 ```text
 gpt-5-codex
 ```
 
-If `gpt-5-codex` is not available in New API or the selected upstream, configure a New API model mapping:
+如果 New API 或上游没有这个模型，不要假设可用。需要在 New API 里做模型映射：
 
 ```text
-Codex requested model: gpt-5-codex
-Actual upstream model: the real Sub2API or DeepSeek model name
+Codex 请求模型: gpt-5-codex
+实际上游模型: Sub2API 或 DeepSeek 真实支持的模型名
 ```
 
-Alternatively, rerun the installer with a real upstream model:
+也可以用实际模型名重新部署或修改 Codex 配置：
 
 ```bash
 CODEX_MODEL="actual-supported-model" ./scripts/install.sh
 ```
 
-### 4. Create the New API Token for Codex
+#### 4. 创建 New API Token
 
-In New API, create a token for Codex. Suggested values:
+在 New API 后台创建给 Codex 使用的 Token，例如：
 
-| Field | Suggested value |
+| 字段 | 建议 |
 |---|---|
-| Name | `codex-local` |
-| Model access | Only the model or mapped model used by Codex |
-| Group | `codex` |
-| Quota | Personal-use amount |
+| 名称 | `codex-local` |
+| 模型权限 | 只开放 Codex 使用的模型 |
+| 分组 | `codex` |
+| 额度 | 按个人自用设置 |
 
-Export the token in the shell that starts Codex:
+在启动 Codex 的终端导出：
 
 ```bash
 export NEWAPI_API_KEY="your-newapi-token"
 ```
 
-Do not put the real token in documentation or commits.
+不要把真实 Token 写进 README、Issue、聊天记录或 Git。
 
-## Codex Config
+### Codex 配置
 
-The installer writes or updates:
+安装脚本会写入或更新：
 
 ```text
 $HOME/.codex/config.toml
 ```
 
-Expected provider block:
+关键配置：
 
 ```toml
 model = "gpt-5-codex"
@@ -247,9 +222,268 @@ stream_max_retries = 2
 stream_idle_timeout_ms = 300000
 ```
 
-The real New API token is read from `NEWAPI_API_KEY`; it is not stored in `config.toml`.
+### 验证
 
-## Validation
+基础验证：
+
+```bash
+$HOME/ai-gateway/validate.sh
+```
+
+创建 New API Token 后做完整验证：
+
+```bash
+export NEWAPI_API_KEY="your-newapi-token"
+$HOME/ai-gateway/validate.sh
+```
+
+也可以直接测试 Responses API：
+
+```bash
+curl http://127.0.0.1:3000/v1/responses \
+  -H "Authorization: Bearer $NEWAPI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5-codex",
+    "input": "Say hello from New API through local gateway."
+  }'
+```
+
+成功标准：返回 JSON，并能看到模型输出文本。
+
+### 常见错误
+
+| 错误 | 原因 | 处理 |
+|---|---|---|
+| `401 unauthorized` | New API Token 错误或 `NEWAPI_API_KEY` 未导出 | 重新导出正确 Token |
+| `404 /v1/responses` | New API 或上游不支持 Responses API | 检查/升级 New API 或换支持 Responses 的渠道 |
+| `model not found` | 模型名或映射错误 | 在 New API 做模型映射，或修改 `CODEX_MODEL` |
+| `502 upstream error` | New API 到上游渠道失败 | 检查 Base URL、Key、模型名、账号状态 |
+| New API 访问不到 Sub2API | 渠道里用了 `127.0.0.1:8080` | 改成 `http://host.docker.internal:8080/v1` |
+| Docker 不可用 | Docker Desktop / Colima 未启动 | 启动 Docker，例如 `colima start` |
+| 端口冲突 | 8080 或 3000 被占用 | 修改端口变量或停止冲突服务 |
+
+### 安全约定
+
+- 默认只绑定 `127.0.0.1`。
+- 不要公开暴露 3000/8080。
+- 不要提交 `.env`、数据库、日志、Token、Cookie、OAuth 数据、账号密码。
+- 订阅账号接入 API 网关可能违反上游条款或触发风控，仅建议个人低频自用。
+
+---
+
+## English
+
+This repository is a reusable one-command deployment kit for a personal AI gateway:
+
+```text
+ChatGPT / Claude subscription accounts -> Sub2API -> New API -> Codex App / Codex CLI
+DeepSeek official API key              -> New API -> Codex App / Codex CLI
+```
+
+Codex calls New API through the OpenAI Responses API:
+
+```text
+POST http://127.0.0.1:3000/v1/responses
+```
+
+> Note: this repository is the deployment template. The live services are deployed to `$HOME/ai-gateway` by default, not inside the cloned repository.
+
+### Defaults
+
+| Item | Default |
+|---|---|
+| Gateway home | `$HOME/ai-gateway` |
+| Sub2API | `http://127.0.0.1:8080` |
+| New API | `http://127.0.0.1:3000` |
+| Codex config | `$HOME/.codex/config.toml` |
+| Codex skill | `$HOME/.codex/skills/sub2api-newapi-codex/SKILL.md` |
+| Local credentials | `$HOME/ai-gateway/LOCAL_CREDENTIALS.md` |
+
+`LOCAL_CREDENTIALS.md` is generated only on the deployed machine, has `600` permissions, and is ignored by Git. It stores the initial Sub2API admin account and password.
+
+### Requirements
+
+- Docker Engine or Docker Desktop
+- Docker Compose plugin
+- `bash`
+- `curl`
+- `openssl`
+- Optional: `python3`, used for safer Codex config updates
+
+With Colima:
+
+```bash
+colima start
+```
+
+### Quick Start
+
+```bash
+git clone https://github.com/Shuo-O/sub2api-newapi-codex-gateway.git
+cd sub2api-newapi-codex-gateway
+./scripts/install.sh
+```
+
+Open:
+
+```text
+Sub2API: http://127.0.0.1:8080
+New API: http://127.0.0.1:3000
+```
+
+Read the Sub2API admin login:
+
+```bash
+cat "$HOME/ai-gateway/LOCAL_CREDENTIALS.md"
+```
+
+### Custom Deployment
+
+```bash
+AI_GATEWAY_HOME="$HOME/ai-gateway" \
+AI_GATEWAY_BIND_HOST="127.0.0.1" \
+SUB2API_PORT="8080" \
+NEW_API_PORT="3000" \
+CODEX_HOME="$HOME/.codex" \
+CODEX_MODEL="gpt-5-codex" \
+./scripts/install.sh
+```
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `AI_GATEWAY_HOME` | `$HOME/ai-gateway` | Runtime directory |
+| `AI_GATEWAY_BIND_HOST` | `127.0.0.1` | Docker published-port bind address |
+| `SUB2API_PORT` | `8080` | Sub2API host port |
+| `NEW_API_PORT` | `3000` | New API host port |
+| `CODEX_HOME` | `$HOME/.codex` | Codex config directory |
+| `CODEX_MODEL` | `gpt-5-codex` | Model requested by Codex |
+| `INSTALL_CODEX_CONFIG` | `1` | Set to `0` to skip Codex config updates |
+| `SUB2API_ADMIN_EMAIL` | `admin@sub2api.local` | Initial Sub2API admin account |
+| `SUB2API_ADMIN_PASSWORD` | generated | Initial Sub2API admin password |
+
+For server deployments, keep the services bound to `127.0.0.1` and access them through SSH tunnels:
+
+```bash
+ssh -N -L 3000:127.0.0.1:3000 -L 8080:127.0.0.1:8080 user@your-server
+```
+
+### Backend Setup
+
+#### 1. Configure Sub2API
+
+Open:
+
+```text
+http://127.0.0.1:8080
+```
+
+Log in with:
+
+```bash
+cat "$HOME/ai-gateway/LOCAL_CREDENTIALS.md"
+```
+
+Then:
+
+1. Add ChatGPT / OpenAI subscription accounts.
+2. Add Claude subscription accounts.
+3. Confirm the actual models exposed by Sub2API.
+4. Generate an API key for New API.
+
+#### 2. Configure New API
+
+Open:
+
+```text
+http://127.0.0.1:3000
+```
+
+Create the New API admin account in the first-run web UI.
+
+Add a Sub2API channel:
+
+| Field | Value |
+|---|---|
+| Type | OpenAI / OpenAI Compatible / Responses-compatible, depending on the current New API UI |
+| Name | `sub2api-local` |
+| Base URL | `http://host.docker.internal:8080/v1` |
+| API Key | The key generated in Sub2API |
+| Models | Actual model names exposed by Sub2API |
+
+New API runs in Docker. To reach Sub2API on the host, use:
+
+```text
+http://host.docker.internal:8080/v1
+```
+
+Add a DeepSeek channel:
+
+| Field | Value |
+|---|---|
+| Type | DeepSeek / OpenAI Compatible |
+| Base URL | `https://api.deepseek.com/v1` |
+| API Key | Your official DeepSeek key |
+| Models | `deepseek-chat`, `deepseek-reasoner` |
+
+#### 3. Model Mapping
+
+Codex requests this model by default:
+
+```text
+gpt-5-codex
+```
+
+If it is unavailable in New API or upstream, create a New API model mapping:
+
+```text
+Codex requested model: gpt-5-codex
+Actual upstream model: a real Sub2API or DeepSeek model name
+```
+
+Or use a real model name:
+
+```bash
+CODEX_MODEL="actual-supported-model" ./scripts/install.sh
+```
+
+#### 4. Create a New API Token for Codex
+
+Create a New API token for Codex and export it in the shell that starts Codex:
+
+```bash
+export NEWAPI_API_KEY="your-newapi-token"
+```
+
+Do not commit or share real tokens.
+
+### Codex Config
+
+The installer writes or updates:
+
+```text
+$HOME/.codex/config.toml
+```
+
+Important provider block:
+
+```toml
+model = "gpt-5-codex"
+model_provider = "newapi"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[model_providers.newapi]
+name = "New API Local"
+base_url = "http://127.0.0.1:3000/v1"
+env_key = "NEWAPI_API_KEY"
+wire_api = "responses"
+request_max_retries = 2
+stream_max_retries = 2
+stream_idle_timeout_ms = 300000
+```
+
+### Validation
 
 Basic validation:
 
@@ -257,14 +491,14 @@ Basic validation:
 $HOME/ai-gateway/validate.sh
 ```
 
-Authenticated Responses API validation:
+Authenticated validation:
 
 ```bash
 export NEWAPI_API_KEY="your-newapi-token"
 $HOME/ai-gateway/validate.sh
 ```
 
-Direct curl check:
+Direct Responses API test:
 
 ```bash
 curl http://127.0.0.1:3000/v1/responses \
@@ -278,21 +512,21 @@ curl http://127.0.0.1:3000/v1/responses \
 
 Success means the endpoint returns JSON containing model output text.
 
-## Troubleshooting
+### Troubleshooting
 
 | Symptom | Meaning | Fix |
 |---|---|---|
-| `401 unauthorized` | Wrong New API token or `NEWAPI_API_KEY` missing in the current shell | Export the correct New API token |
-| `404 /v1/responses` | New API or selected upstream does not support Responses API | Upgrade/check New API or route to a Responses-compatible upstream |
-| `model not found` | Model name or New API mapping is wrong | Add model mapping or change `CODEX_MODEL` |
-| `502 upstream error` | New API cannot reach Sub2API / DeepSeek or upstream rejected request | Check channel Base URL, API key, model name, and account state |
-| New API cannot reach Sub2API | New API channel used `127.0.0.1:8080` | Use `http://host.docker.internal:8080/v1` |
-| Docker unreachable | Docker Desktop or Colima is stopped | Start Docker, for example `colima start` |
-| Port conflict | Another process uses `8080` or `3000` | Change `SUB2API_PORT` / `NEW_API_PORT` or stop the conflicting service |
+| `401 unauthorized` | Wrong New API token or missing `NEWAPI_API_KEY` | Export the correct token |
+| `404 /v1/responses` | New API or upstream does not support Responses API | Check/upgrade New API or route to a compatible upstream |
+| `model not found` | Wrong model name or mapping | Add model mapping or change `CODEX_MODEL` |
+| `502 upstream error` | New API cannot reach upstream | Check Base URL, key, model name, and account state |
+| New API cannot reach Sub2API | Channel used `127.0.0.1:8080` | Use `http://host.docker.internal:8080/v1` |
+| Docker unreachable | Docker Desktop / Colima is stopped | Start Docker, for example `colima start` |
+| Port conflict | Port 8080 or 3000 is already used | Change port variables or stop the conflicting service |
 
-## Security
+### Security
 
-- Keep services bound to localhost unless you add production-grade security yourself.
-- Do not publish subscription-account-backed APIs.
-- Do not commit `.env`, SQLite databases, logs, tokens, cookies, OAuth data, or account credentials.
-- Subscription-account-to-API gateways may violate upstream terms or trigger risk controls. Use only for personal, low-frequency, authorized scenarios.
+- Bind to `127.0.0.1` by default.
+- Do not expose ports 3000/8080 publicly.
+- Do not commit `.env`, databases, logs, tokens, cookies, OAuth data, or account passwords.
+- Subscription-account API gateways may violate upstream terms or trigger risk controls. Use only for personal, low-frequency, authorized scenarios.
