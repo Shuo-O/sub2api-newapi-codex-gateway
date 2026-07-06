@@ -9,6 +9,35 @@ CODEX_MODEL="${CODEX_MODEL:-gpt-5-codex}"
 ok() { printf '[OK] %s\n' "$*"; }
 warn() { printf '[WARN] %s\n' "$*"; }
 fail() { printf '[FAIL] %s\n' "$*"; }
+extract_response_text() {
+  python3 - "$1" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+try:
+    data = json.load(open(path))
+except Exception:
+    print("")
+    raise SystemExit
+
+texts = []
+
+def walk(value):
+    if isinstance(value, dict):
+        text = value.get("text")
+        if isinstance(text, str):
+            texts.append(text)
+        for item in value.values():
+            walk(item)
+    elif isinstance(value, list):
+        for item in value:
+            walk(item)
+
+walk(data)
+print(" ".join(texts[:3])[:500])
+PY
+}
 
 status=0
 
@@ -126,11 +155,15 @@ else
   case "$responses_code" in
     2*)
       ok "/v1/responses returned HTTP $responses_code"
-      printf 'Response body:\n'
-      if command -v jq >/dev/null 2>&1; then
-        jq . /tmp/ai-gateway-validate-body.json 2>/dev/null || sed -n '1,80p' /tmp/ai-gateway-validate-body.json
+      if command -v python3 >/dev/null 2>&1; then
+        text="$(extract_response_text /tmp/ai-gateway-validate-body.json)"
+        if [ -n "$text" ]; then
+          printf 'Model text: %s\n' "$text"
+        else
+          warn "response was JSON but no text field was extracted"
+        fi
       else
-        sed -n '1,80p' /tmp/ai-gateway-validate-body.json
+        warn "python3 is missing; skipped response text extraction"
       fi
       ;;
     401) fail "/v1/responses returned 401 unauthorized"; status=1 ;;

@@ -19,6 +19,7 @@ SUB2API_DIR="$AI_GATEWAY_HOME/sub2api-deploy"
 NEW_API_DIR="$AI_GATEWAY_HOME/new-api-deploy"
 NEW_API_DATA_DIR="$AI_GATEWAY_HOME/new-api-data"
 SKILL_DIR="$CODEX_HOME/skills/sub2api-newapi-codex"
+CHANNEL_SKILL_DIR="$CODEX_HOME/skills/sub2api-newapi-channel"
 CREDENTIALS_FILE="$AI_GATEWAY_HOME/LOCAL_CREDENTIALS.md"
 
 need_cmd() {
@@ -89,6 +90,8 @@ write_local_credentials() {
 install_codex_skill() {
   mkdir -p "$SKILL_DIR"
   cp "$REPO_ROOT/skills/sub2api-newapi-codex/SKILL.md" "$SKILL_DIR/SKILL.md"
+  mkdir -p "$CHANNEL_SKILL_DIR"
+  cp "$REPO_ROOT/skills/sub2api-newapi-channel/SKILL.md" "$CHANNEL_SKILL_DIR/SKILL.md"
 }
 
 update_codex_config() {
@@ -106,7 +109,7 @@ update_codex_config() {
   fi
 
   if command -v python3 >/dev/null 2>&1; then
-    CONFIG="$config" CODEX_MODEL="$CODEX_MODEL" NEW_API_PORT="$NEW_API_PORT" SKILL_DIR="$SKILL_DIR" python3 - <<'PY'
+    CONFIG="$config" CODEX_MODEL="$CODEX_MODEL" NEW_API_PORT="$NEW_API_PORT" SKILL_DIR="$SKILL_DIR" CHANNEL_SKILL_DIR="$CHANNEL_SKILL_DIR" python3 - <<'PY'
 from pathlib import Path
 import os
 import re
@@ -131,6 +134,7 @@ for key, value in {
 
 text = re.sub(r"\n\[model_providers\.newapi\]\n(?:[^\n[]|\n(?!\[))*", "\n", text, flags=re.M)
 text = re.sub(r'\n\[\[skills\.config\]\]\npath = "' + re.escape(os.environ["SKILL_DIR"]) + r'"\nenabled = true\n?', "\n", text)
+text = re.sub(r'\n\[\[skills\.config\]\]\npath = "' + re.escape(os.environ["CHANNEL_SKILL_DIR"]) + r'"\nenabled = true\n?', "\n", text)
 
 provider = f'''
 [model_providers.newapi]
@@ -144,6 +148,10 @@ stream_idle_timeout_ms = 300000
 
 [[skills.config]]
 path = "{os.environ["SKILL_DIR"]}"
+enabled = true
+
+[[skills.config]]
+path = "{os.environ["CHANNEL_SKILL_DIR"]}"
 enabled = true
 '''
 
@@ -168,6 +176,10 @@ stream_idle_timeout_ms = 300000
 
 [[skills.config]]
 path = "$SKILL_DIR"
+enabled = true
+
+[[skills.config]]
+path = "$CHANNEL_SKILL_DIR"
 enabled = true
 EOF_TOML
   fi

@@ -161,15 +161,17 @@ http://127.0.0.1:3000
 |---|---|
 | 类型 | OpenAI / OpenAI Compatible / Responses-compatible，按 New API 当前 UI 为准 |
 | 名称 | `sub2api-local` |
-| Base URL | `http://host.docker.internal:8080/v1` |
+| Base URL | `http://host.docker.internal:8080` |
 | API Key | Sub2API 后台生成的 Key |
 | 模型 | Sub2API 实际暴露的模型名 |
 
 New API 运行在 Docker 容器里，访问宿主机 Sub2API 时不要填 `127.0.0.1:8080`，必须使用：
 
 ```text
-http://host.docker.internal:8080/v1
+http://host.docker.internal:8080
 ```
+
+如果 New API 或 Sub2API 日志里出现 `/v1/v1/responses`，说明 Base URL 多写了一层 `/v1`，需要改回上面的无 `/v1` 地址。
 
 添加 DeepSeek 渠道：
 
@@ -201,7 +203,21 @@ Codex 请求模型: gpt-5-codex
 CODEX_MODEL="actual-supported-model" ./scripts/install.sh
 ```
 
-#### 4. 创建 New API Token
+#### 4. Codex 工具兼容
+
+Codex 的 Responses 请求可能会携带 `image_generation` 工具声明，即使当前只是文本任务。Sub2API 中给 New API 使用的 API Key 所在分组需要允许图片生成能力，否则 Codex CLI / App 可能返回：
+
+```text
+Image generation is not enabled for this group
+```
+
+处理方式：
+
+1. 在 Sub2API 后台打开该分组的“允许当前分组生图”。
+2. 如果你直接改了数据库，需要清理 Sub2API 的 API Key 鉴权缓存，或通过后台/API 保存配置让缓存失效。
+3. 再重新验证 Codex CLI / App。
+
+#### 5. 创建 New API Token
 
 在 New API 后台创建给 Codex 使用的 Token，例如：
 
@@ -219,6 +235,8 @@ export NEWAPI_API_KEY="your-newapi-token"
 ```
 
 不要把真实 Token 写进 README、Issue、聊天记录或 Git。
+
+New API Token 对外通常是 `sk-...` 格式。如果你用脚本或数据库自动化创建 Token，要确认 New API 实际校验的是完整 token 还是去掉 `sk-` 后的 key。更稳妥的方式是在 New API 后台创建 Token。
 
 ### Codex 配置
 
@@ -275,6 +293,16 @@ curl http://127.0.0.1:3000/v1/responses \
 
 成功标准：返回 JSON，并能看到模型输出文本。
 
+Codex CLI 实测：
+
+```bash
+NEWAPI_API_KEY="$NEWAPI_API_KEY" codex exec --ephemeral -s read-only \
+  -c approval_policy='"never"' \
+  -o /tmp/codex-newapi-last.txt \
+  'Reply exactly: CODEX_NEWAPI_OK'
+cat /tmp/codex-newapi-last.txt
+```
+
 ### 常见错误
 
 | 错误 | 原因 | 处理 |
@@ -283,7 +311,9 @@ curl http://127.0.0.1:3000/v1/responses \
 | `404 /v1/responses` | New API 或上游不支持 Responses API | 检查/升级 New API 或换支持 Responses 的渠道 |
 | `model not found` | 模型名或映射错误 | 在 New API 做模型映射，或修改 `CODEX_MODEL` |
 | `502 upstream error` | New API 到上游渠道失败 | 检查 Base URL、Key、模型名、账号状态 |
-| New API 访问不到 Sub2API | 渠道里用了 `127.0.0.1:8080` | 改成 `http://host.docker.internal:8080/v1` |
+| New API 访问不到 Sub2API | 渠道里用了 `127.0.0.1:8080` | 改成 `http://host.docker.internal:8080` |
+| `/v1/v1/responses` | Sub2API 渠道 Base URL 多写了 `/v1` | 改成 `http://host.docker.internal:8080` |
+| `Image generation is not enabled for this group` | Codex 请求带了 `image_generation` 工具声明，Sub2API 分组不允许 | 打开分组图片生成能力并清理 API Key 鉴权缓存 |
 | Docker 不可用 | Docker Desktop / Colima 未启动 | 启动 Docker，例如 `colima start` |
 | 端口冲突 | 8080 或 3000 被占用 | 修改端口变量或停止冲突服务 |
 
@@ -449,15 +479,17 @@ Add a Sub2API channel:
 |---|---|
 | Type | OpenAI / OpenAI Compatible / Responses-compatible, depending on the current New API UI |
 | Name | `sub2api-local` |
-| Base URL | `http://host.docker.internal:8080/v1` |
+| Base URL | `http://host.docker.internal:8080` |
 | API Key | The key generated in Sub2API |
 | Models | Actual model names exposed by Sub2API |
 
 New API runs in Docker. To reach Sub2API on the host, use:
 
 ```text
-http://host.docker.internal:8080/v1
+http://host.docker.internal:8080
 ```
+
+If New API or Sub2API logs show `/v1/v1/responses`, the channel Base URL contains one extra `/v1`; change it back to the value above.
 
 Add a DeepSeek channel:
 
@@ -489,7 +521,21 @@ Or use a real model name:
 CODEX_MODEL="actual-supported-model" ./scripts/install.sh
 ```
 
-#### 4. Create a New API Token for Codex
+#### 4. Codex Tool Compatibility
+
+Codex Responses requests may include an `image_generation` tool declaration even for text-only tasks. The Sub2API group used by the API key given to New API must allow image generation, otherwise Codex CLI / App may return:
+
+```text
+Image generation is not enabled for this group
+```
+
+Fix:
+
+1. Enable image generation for the group in the Sub2API admin UI.
+2. If you changed the database directly, invalidate Sub2API API key auth cache or save through the official UI/API path.
+3. Validate Codex CLI / App again.
+
+#### 5. Create a New API Token for Codex
 
 Create a New API token for Codex and export it in the shell that starts Codex:
 
@@ -498,6 +544,8 @@ export NEWAPI_API_KEY="your-newapi-token"
 ```
 
 Do not commit or share real tokens.
+
+New API tokens are usually shown as `sk-...`. If you automate token creation through scripts or the database, confirm whether New API validates the full token or the key after the `sk-` prefix. Creating the token in the New API UI is safer.
 
 ### Codex Config
 
@@ -554,6 +602,16 @@ curl http://127.0.0.1:3000/v1/responses \
 
 Success means the endpoint returns JSON containing model output text.
 
+Codex CLI validation:
+
+```bash
+NEWAPI_API_KEY="$NEWAPI_API_KEY" codex exec --ephemeral -s read-only \
+  -c approval_policy='"never"' \
+  -o /tmp/codex-newapi-last.txt \
+  'Reply exactly: CODEX_NEWAPI_OK'
+cat /tmp/codex-newapi-last.txt
+```
+
 ### Troubleshooting
 
 | Symptom | Meaning | Fix |
@@ -562,7 +620,9 @@ Success means the endpoint returns JSON containing model output text.
 | `404 /v1/responses` | New API or upstream does not support Responses API | Check/upgrade New API or route to a compatible upstream |
 | `model not found` | Wrong model name or mapping | Add model mapping or change `CODEX_MODEL` |
 | `502 upstream error` | New API cannot reach upstream | Check Base URL, key, model name, and account state |
-| New API cannot reach Sub2API | Channel used `127.0.0.1:8080` | Use `http://host.docker.internal:8080/v1` |
+| New API cannot reach Sub2API | Channel used `127.0.0.1:8080` | Use `http://host.docker.internal:8080` |
+| `/v1/v1/responses` | Sub2API channel Base URL contains an extra `/v1` | Use `http://host.docker.internal:8080` |
+| `Image generation is not enabled for this group` | Codex sent an `image_generation` tool and the Sub2API group disallows it | Enable group image generation and invalidate API key auth cache |
 | Docker unreachable | Docker Desktop / Colima is stopped | Start Docker, for example `colima start` |
 | Port conflict | Port 8080 or 3000 is already used | Change port variables or stop the conflicting service |
 

@@ -1,6 +1,6 @@
 ---
 name: sub2api-newapi-codex
-description: Use this skill when deploying, configuring, validating, or troubleshooting the Sub2API + New API + Codex gateway. It covers Docker deployment, New API channel setup, Codex Responses API provider configuration, and local/server validation.
+description: "Use this skill when deploying, configuring, validating, or troubleshooting the Sub2API + New API + Codex gateway. It covers Docker deployment, New API channel setup, Codex Responses API provider configuration, and local/server validation."
 ---
 
 # Sub2API + New API + Codex Gateway
@@ -20,8 +20,9 @@ Maintain a personal gateway where:
 - Sub2API: `127.0.0.1:8080`
 - New API: `127.0.0.1:3000`
 - Codex config: `$HOME/.codex/config.toml`
-- New API channel URL for Sub2API: `http://host.docker.internal:8080/v1`
+- New API channel URL for Sub2API: `http://host.docker.internal:8080`
 - Codex provider base URL: `http://127.0.0.1:3000/v1`
+- Focused channel setup skill: `sub2api-newapi-channel`
 
 ## Commands
 
@@ -58,4 +59,6 @@ $HOME/ai-gateway/validate.sh
 - `404 /v1/responses`: New API or upstream does not expose Responses API.
 - `model not found`: model name or New API mapping is wrong.
 - `502 upstream error`: New API channel configuration or upstream account state is wrong.
-- New API cannot reach Sub2API: use `http://host.docker.internal:8080/v1` in the New API channel.
+- New API cannot reach Sub2API: use `http://host.docker.internal:8080`, not `127.0.0.1`.
+- Upstream logs show `/v1/v1/responses`: remove `/v1` from the New API Sub2API channel Base URL.
+- Codex CLI returns `Image generation is not enabled for this group`: enable Sub2API group image generation for the group used by the API key, then invalidate the Sub2API API key auth cache.
